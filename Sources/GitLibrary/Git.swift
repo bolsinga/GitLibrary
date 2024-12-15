@@ -58,7 +58,7 @@ public struct Git {
   }
 
   public func status() async throws {
-    try await git(["status"]) { GitError.status($0) }
+    try await git(["status", "--porcelain", "-uno"]) { GitError.status($0) }
   }
 
   public func checkout(commit: String) async throws {
