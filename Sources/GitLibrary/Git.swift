@@ -106,9 +106,9 @@ public struct Git {
     try await git(["checkout", "-b", name, initialCommit]) { GitError.createBranch($0) }
   }
 
-  public func describeTag() async throws -> String {
+  public func describeTag() async throws -> String? {
     let data = try await gitData(["describe", "--tags", "--abbrev=0"]) { GitError.describeTag($0) }
-    guard let tag = String(data: data, encoding: .utf8) else { return "" }
+    guard let tag = String(data: data, encoding: .utf8) else { return nil }
     return tag
   }
 
