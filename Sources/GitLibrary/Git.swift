@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum GitError: Error {
+private enum GitError: Error {
   case status(Int32)
   case main(Int32)
   case add(Int32)
