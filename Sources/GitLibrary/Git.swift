@@ -111,4 +111,10 @@ public struct Git {
     guard let tag = String(data: data, encoding: .utf8) else { return "" }
     return tag
   }
+
+  public func branchName() async throws -> String? {
+    let data = try await gitData(["rev-parse", "--abbrev-ref", "HEAD"]) { GitError.describeTag($0) }
+    guard let branch = String(data: data, encoding: .utf8) else { return nil }
+    return branch
+  }
 }
