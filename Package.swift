@@ -6,5 +6,8 @@ let package = Package(
   name: "GitLibrary",
   platforms: [.macOS(.v15)],
   products: [.library(name: "GitLibrary", targets: ["GitLibrary"])],
-  targets: [.target(name: "GitLibrary")]
+  targets: [
+    .target(name: "GitLibrary"),
+    .testTarget(name: "GitLibraryTests", dependencies: ["GitLibrary"]),
+  ]
 )
