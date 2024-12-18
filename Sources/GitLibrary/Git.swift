@@ -21,6 +21,7 @@ private enum GitError: Error {
   case show(Int32)
   case createBranch(Int32)
   case describeTag(Int32)
+  case mostRecentHash(Int32)
 }
 
 public struct Git {
@@ -116,5 +117,11 @@ public struct Git {
     let data = try await gitData(["rev-parse", "--abbrev-ref", "HEAD"]) { GitError.describeTag($0) }
     guard let branch = String(data: data, encoding: .utf8) else { return nil }
     return branch.firstLine
+  }
+
+  public func mostRecentHash() async throws -> String? {
+    let data = try await gitData(["show", "-s", "--format=%H"]) { GitError.mostRecentHash($0) }
+    guard let commit = String(data: data, encoding: .utf8) else { return nil }
+    return commit.firstLine
   }
 }
