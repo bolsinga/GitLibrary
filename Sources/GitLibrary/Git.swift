@@ -59,6 +59,7 @@ public struct Git {
     return standardOutput.components(separatedBy: "\n").filter { !$0.isEmpty }
   }
 
+  @discardableResult
   public func status() async throws -> [String] {
     try await git(["status", "--porcelain", "-uno"]) { GitError.status($0) }
   }
