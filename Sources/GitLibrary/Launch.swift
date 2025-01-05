@@ -97,15 +97,17 @@ private func read(dispatchIO: DispatchIO, queue: DispatchQueue) async throws -> 
   }
 }
 
-extension Process {
-  func waitUntilTerminated() async -> Int32 {
-    await withCheckedContinuation { continuation in
-      self.terminationHandler = { process in
-        continuation.resume(returning: process.terminationStatus)
+#if os(macOS)
+  extension Process {
+    func waitUntilTerminated() async -> Int32 {
+      await withCheckedContinuation { continuation in
+        self.terminationHandler = { process in
+          continuation.resume(returning: process.terminationStatus)
+        }
       }
     }
   }
-}
+#endif
 
 /// Runs the specified tool as a child process, supplying `stdin` and capturing `stdout`.
 ///
@@ -117,73 +119,80 @@ extension Process {
 func launch(
   tool: URL, arguments: [String] = [], input: Data = Data(), suppressStandardErr: Bool = false
 ) async throws -> (Int32, Data) {
-  let inputPipe = Pipe()
-  let outputPipe = Pipe()
+  #if !os(macOS)
+    enum LaunchError: Error {
+      case unimplemented
+    }
+    throw LaunchError.unimplemented
+  #else
+    let inputPipe = Pipe()
+    let outputPipe = Pipe()
 
-  let proc = Process()
-  proc.executableURL = tool
-  proc.arguments = arguments
-  proc.standardInput = inputPipe
-  proc.standardOutput = outputPipe
-  if suppressStandardErr { proc.standardError = nil }
+    let proc = Process()
+    proc.executableURL = tool
+    proc.arguments = arguments
+    proc.standardInput = inputPipe
+    proc.standardOutput = outputPipe
+    if suppressStandardErr { proc.standardError = nil }
 
-  // All three tasks must return, and each returns one of these.
-  // This enum is used with associated types since it seemed the
-  // simplest way to have the tasks return different results with
-  // a single type.
-  enum LaunchResult {
-    case terminate(Int32)
-    case write
-    case read(Data)
-  }
-
-  // If you write to a pipe whose remote end has closed, the OS raises a
-  // `SIGPIPE` signal whose default disposition is to terminate your
-  // process.  Helpful!  `F_SETNOSIGPIPE` disables that feature, causing
-  // the write to fail with `EPIPE` instead.
-
-  let fcntlResult = fcntl(inputPipe.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
-  guard fcntlResult >= 0 else { throw posixErr(errno) }
-
-  return try await withThrowingTaskGroup(of: LaunchResult.self, returning: (Int32, Data).self) {
-    group in
-
-    // These group tasks will throw any errors that result from launching and tracking the
-    // subprocess. The return value from the tool is return from the task group.
-    group.addTask {
-      try proc.run()
-      return .terminate(await proc.waitUntilTerminated())
+    // All three tasks must return, and each returns one of these.
+    // This enum is used with associated types since it seemed the
+    // simplest way to have the tasks return different results with
+    // a single type.
+    enum LaunchResult {
+      case terminate(Int32)
+      case write
+      case read(Data)
     }
 
-    group.addTask {
-      let queue = DispatchQueue.global()
-      let writeIO = DispatchIO(writingPipe: inputPipe, queue: queue)
-      try await write(dispatchIO: writeIO, data: input, queue: queue)
-      return .write
-    }
+    // If you write to a pipe whose remote end has closed, the OS raises a
+    // `SIGPIPE` signal whose default disposition is to terminate your
+    // process.  Helpful!  `F_SETNOSIGPIPE` disables that feature, causing
+    // the write to fail with `EPIPE` instead.
 
-    group.addTask {
-      let queue = DispatchQueue.global()
-      let readIO = DispatchIO(readingPipe: outputPipe, queue: queue)
-      let data = try await read(dispatchIO: readIO, queue: queue)
-      return .read(data)
-    }
+    let fcntlResult = fcntl(inputPipe.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
+    guard fcntlResult >= 0 else { throw posixErr(errno) }
 
-    // This is the return value from the tool, and its standard out as Data.
-    var result: (status: Int32, data: Data) = (0, Data())
+    return try await withThrowingTaskGroup(of: LaunchResult.self, returning: (Int32, Data).self) {
+      group in
 
-    // Build the return value from the tasks' results.
-    for try await launchResult in group {
-      switch launchResult {
-      case .terminate(let status):
-        result.status = status
-      case .write:
-        break
-      case .read(let data):
-        result.data = data
+      // These group tasks will throw any errors that result from launching and tracking the
+      // subprocess. The return value from the tool is return from the task group.
+      group.addTask {
+        try proc.run()
+        return .terminate(await proc.waitUntilTerminated())
       }
-    }
 
-    return result
-  }
+      group.addTask {
+        let queue = DispatchQueue.global()
+        let writeIO = DispatchIO(writingPipe: inputPipe, queue: queue)
+        try await write(dispatchIO: writeIO, data: input, queue: queue)
+        return .write
+      }
+
+      group.addTask {
+        let queue = DispatchQueue.global()
+        let readIO = DispatchIO(readingPipe: outputPipe, queue: queue)
+        let data = try await read(dispatchIO: readIO, queue: queue)
+        return .read(data)
+      }
+
+      // This is the return value from the tool, and its standard out as Data.
+      var result: (status: Int32, data: Data) = (0, Data())
+
+      // Build the return value from the tasks' results.
+      for try await launchResult in group {
+        switch launchResult {
+        case .terminate(let status):
+          result.status = status
+        case .write:
+          break
+        case .read(let data):
+          result.data = data
+        }
+      }
+
+      return result
+    }
+  #endif
 }
