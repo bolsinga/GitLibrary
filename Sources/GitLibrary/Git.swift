@@ -35,6 +35,6 @@ public protocol Git {
   func describeTag() async throws -> String?
 }
 
-public func createGit(_ implementation: Implementation) -> Git {
-  implementation.create()
+public func createGit(_ implementation: Implementation) throws -> Git {
+  try implementation.create()
 }

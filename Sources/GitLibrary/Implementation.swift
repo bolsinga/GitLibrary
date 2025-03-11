@@ -12,7 +12,7 @@ public enum Implementation {
 }
 
 extension Implementation {
-  public func create() -> Git {
+  public func create() throws -> Git {
     switch self {
     case .outOfProcess(let directory, let suppressStandardErr):
       GitProcess(directory: directory, suppressStandardErr: suppressStandardErr)
