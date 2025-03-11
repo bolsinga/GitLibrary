@@ -35,6 +35,6 @@ public protocol Git {
   func describeTag() async throws -> String?
 }
 
-public func createGit(directory: URL, suppressStandardErr: Bool = false) -> Git {
-  GitProcess(directory: directory, suppressStandardErr: suppressStandardErr)
+public func createGit(_ implementation: Implementation) -> Git {
+  implementation.create()
 }
