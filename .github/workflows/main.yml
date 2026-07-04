@@ -24,3 +24,5 @@ jobs:
       run: xcodebuild -runFirstLaunch
     - name: Xcode Version
       run: xcodebuild -version
+    - name: Build
+      run: swift test -v
