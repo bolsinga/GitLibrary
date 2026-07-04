@@ -9,6 +9,7 @@ import Foundation
 
 public enum Implementation {
   case outOfProcess(directory: URL, suppressStandardErr: Bool = false)
+  case subProcess(directory: URL, suppressStandardErr: Bool = false)
 }
 
 extension Implementation {
@@ -16,6 +17,9 @@ extension Implementation {
     switch self {
     case .outOfProcess(let directory, let suppressStandardErr):
       GitProcess(directory: directory, suppressStandardErr: suppressStandardErr)
+
+    case .subProcess(let directory, let suppressStandardErr):
+      SubProcess(directory: directory, suppressStandardErr: suppressStandardErr)
     }
   }
 }
