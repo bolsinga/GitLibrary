@@ -120,9 +120,6 @@ func launch(
   tool: URL, arguments: [String] = [], input: Data = Data(), suppressStandardErr: Bool = false
 ) async throws -> (Int32, Data) {
   #if !os(macOS)
-    enum LaunchError: Error {
-      case unimplemented
-    }
     throw LaunchError.unimplemented
   #else
     let inputPipe = Pipe()
