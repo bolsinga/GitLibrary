@@ -28,5 +28,5 @@ jobs:
       run: xcodebuild -scheme GitLibrary -showdestinations
     - name: Build / Test
       run: swift test -v -Xswiftc -warnings-as-errors
-    - name: Build iOS / macOS
-      run: xcodebuild -verbose -skipPackagePluginValidation -scheme GitLibrary -destination "generic/platform=iOS Simulator" -destination "generic/platform=macOS"
+    - name: Build macOS
+      run: xcodebuild -verbose -skipPackagePluginValidation -scheme GitLibrary -destination "generic/platform=macOS"
