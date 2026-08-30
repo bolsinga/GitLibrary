@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol Git : Sendable {
+public protocol Git: Sendable {
   @discardableResult func status() async throws -> [String]
 
   func checkout(commit: String) async throws
