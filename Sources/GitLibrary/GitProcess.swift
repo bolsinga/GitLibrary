@@ -9,7 +9,7 @@ import Foundation
 
 private enum GitError: Error {
   case status(Int32)
-  case main(Int32)
+  case checkout(Int32)
   case add(Int32)
   case commit(Int32)
   case tag(Int32)
@@ -65,7 +65,7 @@ struct GitProcess: Git {
   }
 
   public func checkout(commit: String) async throws {
-    try await git(["checkout", commit]) { GitError.main($0) }
+    try await git(["checkout", commit]) { GitError.checkout($0) }
   }
 
   public func add(_ filename: String) async throws {
