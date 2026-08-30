@@ -11,7 +11,11 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "GitLibrary", dependencies: [.product(name: "Subprocess", package: "swift-subprocess")]),
+      name: "GitLibrary",
+      dependencies: [
+        .product(
+          name: "Subprocess", package: "swift-subprocess", condition: .when(platforms: [.macOS]))
+      ]),
     .testTarget(name: "GitLibraryTests", dependencies: ["GitLibrary"]),
   ]
 )
